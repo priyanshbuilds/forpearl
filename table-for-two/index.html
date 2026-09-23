@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Pearl</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:ital,wght@0,400;0,600;1,500&family=Nunito:wght@400;600;700&display=swap');
+
+  :root{
+    --cream:#FBF3E7;
+    --paper:#FFFDF9;
+    --espresso:#2B1B12;
+    --coffee:#6B3F2A;
+    --caramel:#D98E48;
+    --rose:#C9184A;
+    --rose-soft:#F3B6C6;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(217,142,72,0.08) 0, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(201,24,74,0.06) 0, transparent 45%);
+    color:var(--espresso);
+    font-family:'Nunito', sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 14px;
+  }
+
+  .ticket{
+    max-width:460px;
+    width:100%;
+    background:var(--paper);
+    border-radius:18px;
+    box-shadow:0 20px 50px rgba(43,27,18,0.18);
+    padding:36px 28px 30px;
+    position:relative;
+    overflow:hidden;
+    animation:riseIn .7s ease;
+  }
+
+  @keyframes riseIn{
+    from{opacity:0; transform:translateY(18px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  .ticket::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:6px;
+    background:repeating-linear-gradient(90deg, var(--rose) 0 14px, transparent 14px 24px);
+  }
+
+  .eyebrow{
+    font-family:'Nunito', sans-serif;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--coffee);
+    opacity:.7;
+    text-align:center;
+    margin-bottom:6px;
+  }
+
+  h1{
+    font-family:'Caveat', cursive;
+    font-size:44px;
+    color:var(--rose);
+    text-align:center;
+    margin:0 0 2px;
+    line-height:1;
+  }
+
+  .subtitle{
+    text-align:center;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:14px;
+    color:var(--coffee);
+    margin-bottom:22px;
+  }
+
+  .scene-art{
+    width:100%;
+    height:150px;
+    margin-bottom:18px;
+  }
+
+  .story-text{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    line-height:1.6;
+    color:var(--espresso);
+    margin-bottom:22px;
+    min-height:40px;
+  }
+
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  button.choice{
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--paper);
+    background:var(--coffee);
+    border:none;
+    border-radius:12px;
+    padding:14px 16px;
+    cursor:pointer;
+    text-align:left;
+    transition:transform .15s ease, background .2s ease;
+  }
+  button.choice:hover{
+    background:var(--rose);
+    transform:translateX(3px);
+  }
+  button.choice:active{ transform:scale(0.98); }
+
+  button.restart{
+    margin-top:6px;
+    background:transparent;
+    color:var(--coffee);
+    border:2px solid var(--coffee);
+    font-family:'Nunito', sans-serif;
+    font-weight:700;
+    border-radius:12px;
+    padding:12px;
+    cursor:pointer;
+  }
+
+  .stamp{
+    position:absolute;
+    bottom:16px;
+    right:18px;
+    font-family:'Caveat', cursive;
+    font-size:15px;
+    color:var(--rose-soft);
+    transform:rotate(-8deg);
+  }
+
+  .heart-burst{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:5;
+  }
+  .heart-burst span{
+    position:absolute;
+    top:-10%;
+    font-size:20px;
+    animation:fall linear forwards;
+    opacity:.9;
+  }
+  @keyframes fall{
+    to{ transform:translateY(110vh) rotate(360deg); opacity:0.2; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ticket{animation:none;}
+    .heart-burst span{animation:none; display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="ticket" id="ticket">
+  <div class="eyebrow">Priyansh &amp; Pearl — Table for Two</div>
+  <h1 id="storyTitle">Order Up, Love</h1>
+  <div class="subtitle" id="storySubtitle">a choose-your-own-adventure, served warm</div>
+  <svg class="scene-art" id="sceneArt" viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="story-text" id="storyText"></div>
+  <div class="choices" id="choices"></div>
+  <div class="stamp">est. that afternoon at the café ☕</div>
+</div>
+
+<div class="heart-burst" id="heartBurst"></div>
+
+<script>
+const ticketEl = document.getElementById('ticket');
+const titleEl = document.getElementById('storyTitle');
+const subtitleEl = document.getElementById('storySubtitle');
+const textEl = document.getElementById('storyText');
+const choicesEl = document.getElementById('choices');
+const artEl = document.getElementById('sceneArt');
+
+// --- little SVG scenes, drawn not photographed ---
+const scenes = {
+  cafe: `
+    <rect x="0" y="0" width="300" height="150" fill="#FBF3E7"/>
+    <circle cx="150" cy="95" r="45" fill="#F3E1C8"/>
+    <rect x="70" y="118" width="160" height="8" rx="4" fill="#D98E48"/>
+    <circle cx="118" cy="70" r="16" fill="#D98E48"/>
+    <circle cx="182" cy="70" r="16" fill="#C9184A" opacity="0.85"/>
+    <path d="M104 62 Q118 50 132 62" stroke="#2B1B12" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M168 66 Q182 78 196 66" stroke="#2B1B12" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <rect x="140" y="94" width="20" height="12" rx="2" fill="#6B3F2A"/>
+    <ellipse cx="150" cy="94" rx="10" ry="4" fill="#8a5a3d"/>
+  `,
+  bite: `
+    <rect x="0" y="0" width="300" height="150" fill="#FBF3E7"/>
+    <circle cx="150" cy="90" r="42" fill="#F3E1C8"/>
+    <circle cx="112" cy="70" r="15" fill="#D98E48"/>
+    <circle cx="188" cy="70" r="15" fill="#C9184A" opacity="0.85"/>
+    <path d="M120 66 L100 60" stroke="#2B1B12" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="97" cy="59" rx="6" ry="4" fill="#F2A65A"/>
+    <path d="M182 62 Q188 55 196 60" stroke="#2B1B12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M175 74 q13 -4 20 4" stroke="#2B1B12" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <text x="150" y="130" font-family="Caveat, cursive" font-size="18" fill="#C9184A" text-anchor="middle">"nooo—" (nodding yes anyway)</text>
+  `,
+  laugh: `
+    <rect x="0" y="0" width="300" height="150" fill="#FBF3E7"/>
+    <circle cx="115" cy="75" r="17" fill="#D98E48"/>
+    <circle cx="185" cy="75" r="17" fill="#C9184A" opacity="0.85"/>
+    <path d="M100 70 Q115 85 130 70" stroke="#2B1B12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M170 68 Q185 82 200 68" stroke="#2B1B12" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <text x="150" y="30" font-family="Caveat, cursive" font-size="22" fill="#C9184A" text-anchor="middle">hehe :)</text>
+    <path d="M60 100 q10 -14 20 0" stroke="#F2A65A" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M220 100 q10 -14 20 0" stroke="#F2A65A" stroke-width="2" fill="none" stroke-linecap="round"/>
+  `,
+  candle: `
+    <rect x="0" y="0" width="300" height="150" fill="#2B1B12"/>
+    <circle cx="150" cy="90" r="50" fill="#3c2a1e"/>
+    <rect x="145" y="60" width="10" height="30" rx="3" fill="#F2A65A"/>
+    <path d="M150 55 q6 -10 0 -16 q-6 6 0 16" fill="#F2A65A"/>
+    <circle cx="118" cy="80" r="15" fill="#D98E48"/>
+    <circle cx="182" cy="80" r="15" fill="#C9184A"/>
+    <text x="150" y="135" font-family="Caveat, cursive" font-size="20" fill="#F3B6C6" text-anchor="middle">to be continued... tonight</text>
+  `,
+  future: `
+    <rect x="0" y="0" width="300" height="150" fill="#FBF3E7"/>
+    <circle cx="110" cy="80" r="16" fill="#D98E48"/>
+    <circle cx="190" cy="80" r="16" fill="#C9184A" opacity="0.85"/>
+    <path d="M126 82 L174 82" stroke="#C9184A" stroke-width="2" stroke-dasharray="4 4"/>
+    <path d="M150 70 c-8 -12 -26 -2 -12 12 c6 6 12 10 12 10 s6 -4 12 -10 c14 -14 -4 -24 -12 -12z" fill="#C9184A" transform="translate(0,-8) scale(0.9)"/>
+    <text x="150" y="130" font-family="Caveat, cursive" font-size="20" fill="#6B3F2A" text-anchor="middle">still stealing bites, years from now</text>
+  `
+};
+
+function setScene(key){
+  artEl.innerHTML = scenes[key] || scenes.cafe;
+}
+
+function burstHearts(n=14){
+  const container = document.getElementById('heartBurst');
+  container.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const s = document.createElement('span');
+    s.textContent = ['💛','💗','☕','✨'][Math.floor(Math.random()*4)];
+    s.style.left = Math.random()*100+'vw';
+    s.style.animationDuration = (2.5+Math.random()*2)+'s';
+    s.style.fontSize = (14+Math.random()*14)+'px';
+    container.appendChild(s);
+  }
+  setTimeout(()=>container.innerHTML='', 4500);
+}
+
+const story = {
+  start: {
+    title: "Order Up, Love",
+    subtitle: "a choose-your-own-adventure, served warm",
+    scene: 'cafe',
+    text: "It's that afternoon again. The one at the café. Priyansh has a forkful of something delicious hovering in the air, aimed straight at Pearl, who is already shaking her head no — while leaning in closer. Classic Pearl. What happens next?",
+    choices: [
+      { label: "Take the bite anyway 😋", next: "bite" },
+      { label: "Steal the fork instead 😏", next: "steal" }
+    ]
+  },
+  bite: {
+    title: "The No That Meant Yes",
+    scene: 'bite',
+    text: "She takes the bite. Obviously. The 'no' was never a no, it was just Pearl being Pearl — cute, dramatic, and fully cooperating anyway. That photo lives rent-free in Priyansh's head forever.",
+    choices: [
+      { label: "Laugh so hard the table shakes", next: "laugh" },
+      { label: "Feed her one more bite, just because", next: "laugh" }
+    ]
+  },
+  steal: {
+    title: "Fork Heist, Successful",
+    scene: 'laugh',
+    text: "Pearl grabs the fork mid-air and feeds Priyansh instead, grinning like she just won something. She did. She always does.",
+    choices: [
+      { label: "Laugh so hard the table shakes", next: "laugh" }
+    ]
+  },
+  laugh: {
+    title: "That Afternoon",
+    scene: 'laugh',
+    text: "This is the memory Priyansh keeps coming back to — not because anything big happened, just because it was easy and warm and fully, unmistakably you two. He wanted to build you something today because of exactly this feeling.",
+    choices: [
+      { label: "What does he want tonight? 👀", next: "candle" },
+      { label: "Skip ahead a few years...", next: "future" }
+    ]
+  },
+  candle: {
+    title: "Tonight, Then",
+    subtitle: "the spicy part 😏",
+    scene: 'candle',
+    text: "Candles, your favorite playlist, and zero plans to leave the house. He's not stuffing your mouth with food this time — he's got other ideas for keeping you speechless. Consider this your official, very personal invitation. Reply required. In person.",
+    choices: [
+      { label: "See where this ends up", next: "future" },
+      { label: "Read that again 👀", next: "candle" }
+    ]
+  },
+  future: {
+    title: "Still Us",
+    scene: 'future',
+    text: "Same café energy, different decade — still feeding each other, still pretending to say no, still choosing this every single time. That's the whole point of this website: he'd pick this bit with you, on repeat, forever.",
+    choices: [
+      { label: "Read it again from the top", next: "start" }
+    ]
+  }
+};
+
+function render(key){
+  const node = story[key];
+  titleEl.textContent = node.title;
+  subtitleEl.textContent = node.subtitle || "a choose-your-own-adventure, served warm";
+  setScene(node.scene);
+  textEl.textContent = node.text;
+  choicesEl.innerHTML = '';
+  node.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = c.label;
+    btn.onclick = () => {
+      if(c.next === 'candle' || c.next === 'future'){ burstHearts(10); }
+      render(c.next);
+    };
+    choicesEl.appendChild(btn);
+  });
+  ticketEl.style.animation = 'none';
+  void ticketEl.offsetWidth;
+  ticketEl.style.animation = 'riseIn .5s ease';
+}
+
+render('start');
+</script>
+
+</body>
+</html>

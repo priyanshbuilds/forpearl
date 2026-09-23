@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Pearl</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:ital,wght@0,400;0,600;1,500&family=Nunito:wght@400;600;700&display=swap');
+
+  :root{
+    --cream:#FBF3E7;
+    --paper:#FFFDF9;
+    --espresso:#2B1B12;
+    --coffee:#6B3F2A;
+    --caramel:#D98E48;
+    --rose:#C9184A;
+    --rose-soft:#F3B6C6;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(217,142,72,0.08) 0, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(201,24,74,0.06) 0, transparent 45%);
+    color:var(--espresso);
+    font-family:'Nunito', sans-serif;
+    min-height:100vh;
+    padding:48px 18px 60px;
+  }
+
+  .wrap{
+    max-width:480px;
+    margin:0 auto;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--coffee);
+    opacity:.7;
+    text-align:center;
+    margin-bottom:6px;
+  }
+
+  h1{
+    font-family:'Caveat', cursive;
+    font-size:52px;
+    color:var(--rose);
+    text-align:center;
+    margin:0 0 4px;
+    line-height:1;
+  }
+
+  .subtitle{
+    text-align:center;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:14px;
+    color:var(--coffee);
+    margin-bottom:36px;
+  }
+
+  .card{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    background:var(--paper);
+    border-radius:16px;
+    box-shadow:0 14px 34px rgba(43,27,18,0.14);
+    padding:22px 22px;
+    margin-bottom:16px;
+    position:relative;
+    overflow:hidden;
+    transition:transform .15s ease, box-shadow .2s ease;
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 20px 44px rgba(43,27,18,0.2);
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; bottom:0;
+    width:5px;
+    background:var(--rose);
+  }
+
+  .card-label{
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--caramel);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:21px;
+    color:var(--espresso);
+    margin-bottom:4px;
+  }
+
+  .card-desc{
+    font-size:14px;
+    color:var(--coffee);
+    opacity:.85;
+    line-height:1.4;
+  }
+
+  .card.locked{
+    opacity:.5;
+    pointer-events:none;
+  }
+  .card.locked .card-title::after{
+    content:" · soon";
+    font-family:'Nunito', sans-serif;
+    font-size:12px;
+    font-weight:700;
+    color:var(--rose-soft);
+  }
+
+  .footer-note{
+    text-align:center;
+    font-family:'Caveat', cursive;
+    font-size:16px;
+    color:var(--rose-soft);
+    margin-top:30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Priyansh &amp; Pearl</div>
+  <h1>For You</h1>
+  <div class="subtitle">a little collection, added to over time</div>
+
+  <a class="card" href="table-for-two/">
+    <div class="card-label">Story</div>
+    <div class="card-title">Order Up, Love</div>
+    <div class="card-desc">A choose-your-own-adventure, starting at that afternoon in the café.</div>
+  </a>
+
+  <div class="card locked">
+    <div class="card-label">Game</div>
+    <div class="card-title">coming</div>
+    <div class="card-desc">Something to play together, next.</div>
+  </div>
+
+  <div class="card locked">
+    <div class="card-label">Gallery</div>
+    <div class="card-title">coming</div>
+    <div class="card-desc">A little montage, later.</div>
+  </div>
+
+  <div class="footer-note">more gets added here, always ☕</div>
+</div>
+</body>
+</html>
