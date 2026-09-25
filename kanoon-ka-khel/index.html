@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kanoon Ka Khel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&display=swap');
+  :root{
+    --saffron:#FF9933; --white:#FFFFFF; --green:#138808; --navy:#1a1a2e;
+    --ink:#20202b; --card:#ffffff; --accent:#D6006B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+  body{
+    font-family:'Nunito',sans-serif; color:var(--ink);
+    background:linear-gradient(180deg, #FFF3E0 0%, #FFFFFF 45%, #E8F7E9 100%);
+    display:flex; align-items:center; justify-content:center; height:100vh;
+    padding: env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+  }
+  #stage{ position:relative; width:100%; max-width:460px; height:100%; max-height:820px; overflow:hidden; }
+  .screen{ position:absolute; inset:0; display:none; flex-direction:column; align-items:center; padding:22px 18px; overflow-y:auto; }
+  .screen.active{ display:flex; }
+
+  h1.brand{ font-family:'Baloo 2',cursive; font-size:32px; margin:6px 0 2px; text-align:center;
+    background:linear-gradient(90deg, var(--saffron), var(--accent), var(--green));
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tagline{ font-size:14px; color:#555; margin-bottom:20px; text-align:center; }
+
+  .chakra{ font-size:22px; }
+
+  .mode-card{
+    width:100%; max-width:340px; background:var(--card); border-radius:16px;
+    padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:14px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08); border:2px solid transparent; cursor:pointer;
+    text-align:left;
+  }
+  .mode-card:active{ transform:scale(0.98); }
+  .mode-card.selected{ border-color:var(--accent); background:#fff0f6; }
+  .mode-card .ic{ font-size:32px; }
+  .mode-card .mt{ font-family:'Baloo 2',cursive; font-size:17px; }
+  .mode-card .md{ font-size:13px; color:#666; }
+
+  .hud{ display:flex; justify-content:space-between; align-items:center; gap:6px; width:100%; max-width:340px; margin-bottom:14px; font-family:'Baloo 2',cursive; }
+  .hud .pill{ background:var(--ink); color:#fff; border-radius:20px; padding:6px 12px; font-size:12px; white-space:nowrap; }
+  .hud .pill.gold{ background:var(--saffron); color:#3a2200; }
+
+  .qcard{ width:100%; max-width:340px; background:var(--card); border-radius:18px; padding:22px 18px; box-shadow:0 10px 26px rgba(0,0,0,0.1); text-align:center; }
+  .qcard .tag{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:800; margin-bottom:8px; }
+  .qcard .qtext{ font-size:17px; font-weight:700; line-height:1.4; margin-bottom:18px; }
+  .opt{ display:block; width:100%; text-align:left; background:#fafafa; border:2px solid #eee; border-radius:12px;
+    padding:12px 14px; margin-bottom:10px; font-size:14px; font-weight:700; cursor:pointer; color:var(--ink); }
+  .opt.correct{ background:#e6f9e9; border-color:var(--green); }
+  .opt.wrong{ background:#fdeaea; border-color:#d6334a; }
+
+  .timerbar{ width:100%; max-width:340px; height:6px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:14px; }
+  .timerbar .fill{ height:100%; background:var(--saffron); width:100%; transition:width linear; }
+
+  .swipe-wrap{ position:relative; width:100%; max-width:320px; height:220px; margin-bottom:16px; }
+  .swipe-card{ position:absolute; inset:0; background:var(--card); border-radius:18px; padding:24px 18px;
+    box-shadow:0 10px 26px rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:center;
+    text-align:center; font-size:17px; font-weight:700; touch-action:none; }
+  .swipe-hint{ display:flex; justify-content:space-between; width:100%; max-width:320px; font-family:'Baloo 2',cursive; font-size:13px; margin-bottom:8px; }
+  .swipe-hint .f{ color:#d6334a; } .swipe-hint .t{ color:var(--green); }
+
+  .judge-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .judge-emoji{ font-size:44px; }
+  .judge-bubble{ background:var(--ink); color:#fff; border-radius:14px; padding:10px 14px; font-size:13px; font-weight:700; max-width:230px; }
+
+  /* ---- Order in Court theme: wood panel, parchment card, serif type ---- */
+  #stage.theme-court #game{
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255,200,120,0.12) 0%, transparent 55%),
+      repeating-linear-gradient(90deg, #3b2410 0 18px, #33200d 18px 36px);
+  }
+  #stage.theme-court .hud .pill{ background:#5a3a1a; border:1px solid #a97a3b; }
+  #stage.theme-court .qcard{
+    background:#f5ecd2; border:3px double #8a5a2b; border-radius:6px;
+    box-shadow:0 12px 26px rgba(0,0,0,0.35);
+  }
+  #stage.theme-court .qtext{ font-family:Georgia, 'Times New Roman', serif; font-style:italic; }
+  #stage.theme-court .tag{ color:#8a5a2b; }
+  #stage.theme-court .opt{ background:#fffaf0; border-color:#c9a877; font-family:Georgia, serif; }
+  #stage.theme-court .opt.correct{ background:#e6f9e9; border-color:var(--green); }
+  #stage.theme-court .opt.wrong{ background:#fdeaea; border-color:#8a1c1c; }
+  #stage.theme-court .judge-emoji{ font-size:58px; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+  #stage.theme-court .judge-bubble{ background:#3b2410; border:1px solid #a97a3b; font-family:Georgia,serif; }
+
+  .stamp{
+    position:fixed; top:40%; left:50%; transform:translate(-50%,-50%) rotate(-12deg) scale(0);
+    font-family:'Baloo 2',cursive; font-size:30px; font-weight:800; letter-spacing:2px;
+    padding:10px 22px; border:5px solid; border-radius:10px; z-index:40; pointer-events:none;
+    opacity:0;
+  }
+  .stamp.show{ animation: stampBang .5s ease forwards; }
+  @keyframes stampBang{
+    0%{ transform:translate(-50%,-50%) rotate(-12deg) scale(2.4); opacity:0; }
+    60%{ transform:translate(-50%,-50%) rotate(-12deg) scale(0.9); opacity:1; }
+    100%{ transform:translate(-50%,-50%) rotate(-12deg) scale(1); opacity:1; }
+  }
+  .stamp.sustained{ color:var(--green); border-color:var(--green); background:rgba(19,136,8,0.08); }
+  .stamp.overruled{ color:#8a1c1c; border-color:#8a1c1c; background:rgba(138,28,28,0.08); }
+
+  /* ---- Rapid Fire theme: energetic neon pulse ---- */
+  #stage.theme-rapid #game{
+    background: linear-gradient(180deg, #FFF3E0 0%, #FFFFFF 40%, #E8F7E9 100%);
+  }
+  #stage.theme-rapid .qcard{ border:2px solid transparent; animation: rapidPulseBorder 1.2s ease-in-out infinite; }
+  @keyframes rapidPulseBorder{
+    0%,100%{ box-shadow:0 10px 26px rgba(0,0,0,0.1), 0 0 0 2px rgba(255,153,51,0.25); }
+    50%{ box-shadow:0 10px 26px rgba(0,0,0,0.1), 0 0 0 2px rgba(214,0,107,0.35); }
+  }
+  #stage.theme-rapid .tag{ color:var(--saffron); }
+  #stage.theme-rapid .timerbar .fill{ background:linear-gradient(90deg, var(--saffron), var(--accent)); }
+  .combo-flame{ font-size:13px; margin-left:4px; }
+
+  .explain{ font-size:13px; color:#555; margin-top:10px; line-height:1.4; }
+
+  .verdict{ font-family:'Baloo 2',cursive; font-size:26px; margin:10px 0 4px; text-align:center; }
+  .final-score{ font-size:16px; font-weight:800; margin-bottom:8px; }
+  .final-msg{ font-size:14px; color:#555; text-align:center; max-width:280px; margin-bottom:20px; line-height:1.4; }
+  .final-best{ font-size:12px; color:#888; margin-bottom:16px; font-weight:700; }
+
+  .stats-bar{ font-size:12px; font-weight:800; color:#555; margin-bottom:10px; text-align:center; }
+  .ach-row{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; justify-content:center; max-width:300px; }
+  .badge{ font-size:20px; opacity:1; }
+  .badge.locked{ opacity:.18; filter:grayscale(1); }
+
+  .ach-toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:10px 18px; border-radius:12px;
+    font-weight:800; font-size:13px; opacity:0; transition:opacity .3s, transform .3s;
+    z-index:50; pointer-events:none; white-space:nowrap;
+  }
+  .ach-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  button.primary{ font-family:'Baloo 2',cursive; font-size:16px; color:#fff; background:var(--accent);
+    border:none; border-radius:14px; padding:14px 30px; cursor:pointer; box-shadow:0 8px 18px rgba(214,0,107,0.3); }
+  button.primary:active{ transform:scale(0.97); }
+  button.ghost{ background:transparent; border:2px solid var(--ink); color:var(--ink); border-radius:12px;
+    padding:10px 20px; font-family:'Nunito',sans-serif; font-weight:800; font-size:13px; cursor:pointer; margin-top:10px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div class="stamp" id="stamp"></div>
+  <div class="ach-toast" id="achToast"></div>
+
+  <div class="screen active" id="menu">
+    <div class="chakra">🇮🇳</div>
+    <h1 class="brand">Kanoon Ka Khel</h1>
+    <div class="tagline">Law & Laughs Arcade, pick your mode</div>
+    <div class="stats-bar" id="statsBar"></div>
+    <div class="ach-row" id="achRow"></div>
+
+
+    <div class="mode-card" data-mode="rapid">
+      <div class="ic">⚡</div>
+      <div><div class="mt">Rapid Fire</div><div class="md">Timed MCQs. Build a streak. Don't blink.</div></div>
+    </div>
+    <div class="mode-card" data-mode="scenario">
+      <div class="ic">🎭</div>
+      <div><div class="mt">What's The Law?</div><div class="md">Funny scenario, no timer. Guess the article.</div></div>
+    </div>
+    <div class="mode-card" data-mode="swipe">
+      <div class="ic">👉</div>
+      <div><div class="mt">True or Nah</div><div class="md">Swipe right for true, left for false.</div></div>
+    </div>
+    <div class="mode-card" data-mode="judge">
+      <div class="ic">⚖️</div>
+      <div><div class="mt">Order in Court</div><div class="md">The judge is watching. Don't get objection'd.</div></div>
+    </div>
+  </div>
+
+  <div class="screen" id="topicPicker">
+    <div class="chakra">📚</div>
+    <h1 class="brand" style="font-size:24px;">Pick Topics</h1>
+    <div class="tagline">Tap one or more. Round pulls only from what's selected.</div>
+    <div class="mode-card" data-topic="all">
+      <div class="ic">🎲</div>
+      <div><div class="mt">Mixed Bag</div><div class="md">All topics shuffled together.</div></div>
+    </div>
+    <div id="topicList" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
+    <button class="primary" id="topicStartBtn" style="margin-top:6px;">Start Round</button>
+    <button class="ghost" id="topicBackBtn">Back</button>
+  </div>
+
+  <div class="screen" id="game">
+    <div class="hud">
+      <div class="pill gold">SCORE <span id="scoreVal">0</span></div>
+      <div class="pill" id="streakPill">STREAK 0</div>
+      <div class="pill" id="exitBtn" style="cursor:pointer;">✕ EXIT</div>
+    </div>
+    <div class="timerbar" id="timerBar" style="display:none;"><div class="fill" id="timerFill"></div></div>
+
+    <div id="mcqArea" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+      <div class="judge-row" id="judgeRow" style="display:none;">
+        <div class="judge-emoji">⚖️</div>
+        <div class="judge-bubble" id="judgeBubble">Order! Answer carefully...</div>
+      </div>
+      <div class="qcard">
+        <div class="tag" id="qtag">QUESTION</div>
+        <div class="qtext" id="qtext"></div>
+        <div id="optsWrap"></div>
+        <div class="explain" id="explainBox" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div id="swipeArea" style="width:100%; display:none; flex-direction:column; align-items:center;">
+      <div class="swipe-hint"><span class="f">← FALSE</span><span class="t">TRUE →</span></div>
+      <div class="swipe-wrap" id="swipeWrap"></div>
+      <div class="explain" id="swipeExplain" style="min-height:36px;"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="results">
+    <div class="chakra">🏆</div>
+    <div class="verdict" id="verdictTitle">Nice Round</div>
+    <div class="final-score">Score: <span id="finalScoreVal">0</span></div>
+    <div class="final-msg" id="finalMsg"></div>
+    <div class="final-best" id="roundBestLine"></div>
+    <button class="primary" id="replayBtn">Play Again</button>
+    <button class="ghost" id="menuBtn">Back to Modes</button>
+  </div>
+
+</div>
+
+<script>
+const CATS = [
+  {key:'constitutional', label:'Constitutional Law', icon:'📜'},
+  {key:'criminal', label:'Criminal Law (IPC/BNS)', icon:'🚨'},
+  {key:'crpc', label:'Criminal Procedure', icon:'👮'},
+  {key:'civil', label:'Civil Law', icon:'⚖️'},
+  {key:'property', label:'Property Law', icon:'🏠'},
+  {key:'cyber', label:'Cyber & Internet Law', icon:'💻'},
+  {key:'family', label:'Family Law', icon:'👨‍👩‍👧'},
+  {key:'consumer', label:'Consumer Protection', icon:'🛒'},
+  {key:'labour', label:'Labour Law', icon:'🛠️'},
+  {key:'corporate', label:'Corporate Law', icon:'🏢'},
+];
+
+const MCQ_ITEMS = [
+  {cat:'constitutional', q:"Your uncle jokes the Constitution takes chai breaks too, it's basically endless. How many articles did it originally have?",
+   opts:["395","250","500","100"], c:0, ex:"Originally 395 articles in 22 parts and 8 schedules, even longer after amendments."},
+  {cat:'constitutional', q:"Dr. Ambedkar called this Article the 'heart and soul' of the Constitution. Which one?",
+   opts:["Article 32","Article 21","Article 14","Article 19"], c:0, ex:"Article 32, Right to Constitutional Remedies, straight to the Supreme Court when rights are violated."},
+  {cat:'constitutional', q:"Which Article gives the Right to Life, that courts have stretched to cover privacy, clean environment, even dignity in death?",
+   opts:["Article 21","Article 19","Article 15","Article 25"], c:0, ex:"Article 21, one short sentence, endlessly expanded by judges."},
+  {cat:'constitutional', q:"Who chaired the Drafting Committee of the Indian Constitution?",
+   opts:["Dr. B.R. Ambedkar","Jawaharlal Nehru","Sardar Patel","Rajendra Prasad"], c:0, ex:"Dr. B.R. Ambedkar, rightly called the chief architect of the Constitution."},
+  {cat:'constitutional', q:"When did the Constitution actually come into force?",
+   opts:["26 Jan 1950","15 Aug 1947","26 Nov 1949","2 Oct 1950"], c:0, ex:"26 January 1950, adopted 26 Nov 1949, enforced two months later on Republic Day."},
+  {cat:'constitutional', q:"Which Article abolished untouchability in any form?",
+   opts:["Article 17","Article 21","Article 44","Article 1"], c:0, ex:"Article 17, abolishes untouchability and forbids its practice in any form."},
+  {cat:'constitutional', q:"The 'Basic Structure Doctrine', Parliament can amend the Constitution but not destroy its core, came from which case?",
+   opts:["Kesavananda Bharati case","Shah Bano case","Maneka Gandhi case","Golaknath case"], c:0, ex:"Kesavananda Bharati v. State of Kerala (1973), 13 judges, one of the longest hearings ever."},
+  {cat:'constitutional', q:"Which Article lists your Fundamental Duties, the ones nobody can name more than two of?",
+   opts:["Article 51A","Article 21","Article 19","Article 32"], c:0, ex:"Article 51A, 11 Fundamental Duties, added by the 42nd Amendment."},
+  {cat:'constitutional', q:"What's the minimum voting age in India?",
+   opts:["18","21","16","25"], c:0, ex:"18, lowered from 21 by the 61st Amendment in 1988."},
+  {cat:'constitutional', q:"India's Constitution being the longest written constitution in the world, true flex or myth?",
+   opts:["True flex","Total myth","Only in Asia","Tied with USA"], c:0, ex:"True, the longest written constitution of any sovereign country in the world."},
+
+  {cat:'criminal', q:"Someone runs a chit fund scam and 'settles' with a fake cheque. Which section is about to make them internet-famous?",
+   opts:["Section 420 IPC","Section 302 IPC","Section 144 CrPC","Article 370"], c:0, ex:"Section 420 IPC, cheating and dishonestly inducing delivery of property. Bollywood built a whole personality on it."},
+  {cat:'criminal', q:"Your neighbour keeps saying 'I'll sue you for murder' every time you play loud music. Which section actually covers murder?",
+   opts:["Section 302 IPC","Section 420 IPC","Section 144 CrPC","Section 375 IPC"], c:0, ex:"Section 302 IPC prescribes punishment for murder. Under the new BNS it's Section 103."},
+  {cat:'criminal', q:"A friend jokes 'that's basically 498A material' about a bad in-law fight. What does 498A actually deal with?",
+   opts:["Cruelty by husband or in-laws","Cheque bounce","Defamation","Theft"], c:0, ex:"Section 498A IPC punishes cruelty towards a married woman by her husband or his relatives."},
+  {cat:'criminal', q:"India replaced the IPC with a new criminal code in 2023-24. What's it called?",
+   opts:["Bharatiya Nyaya Sanhita (BNS)","Bharatiya Suraksha Code","Indian Justice Act","Nyaya Samhita Act"], c:0, ex:"The Bharatiya Nyaya Sanhita (BNS) replaced the 1860 Indian Penal Code."},
+  {cat:'criminal', q:"What does 'cognizable offence' mean in Indian criminal law?",
+   opts:["Police can arrest without a warrant","Only the President can prosecute it","It's a civil matter only","It applies only to minors"], c:0, ex:"Cognizable offences (like murder or robbery) let police arrest without needing a warrant first."},
+
+  {cat:'crpc', q:"Cops want to stop a crowd gathering before a controversial match result. What gets slapped on the area?",
+   opts:["Section 144 CrPC","Article 356","The Preamble","Article 21"], c:0, ex:"Section 144 CrPC, prohibits assembly of 4+ people. Used constantly, debated endlessly."},
+  {cat:'crpc', q:"Someone's arrested at midnight and their family panics about 'disappearing into the system.' What must police legally do within 24 hours?",
+   opts:["Produce them before a magistrate","Release them automatically","Call their employer","Post it on social media"], c:0, ex:"Article 22 and CrPC/BNSS require producing an arrested person before a magistrate within 24 hours."},
+  {cat:'crpc', q:"What's a First Information Report, the thing every crime thriller opens with?",
+   opts:["FIR, the first police record of a cognizable offence","A court's final judgment","A lawyer's opening statement","A bail application"], c:0, ex:"An FIR is the police's first written record of information about a cognizable offence, filed under Section 154 CrPC."},
+  {cat:'crpc', q:"'Anticipatory bail' is for someone who is...",
+   opts:["Not yet arrested but fears arrest","Already convicted","A witness only","A minor accused"], c:0, ex:"Anticipatory bail, under Section 438 CrPC (now Section 482 BNSS), protects a person who fears arrest before it happens."},
+  {cat:'crpc', q:"Who can investigate a cognizable offence without needing prior court permission?",
+   opts:["Police","A private detective","A journalist","A municipal officer"], c:0, ex:"Police have the power to investigate cognizable offences on their own under the CrPC/BNSS."},
+
+  {cat:'civil', q:"Your landlord refuses to return your security deposit. What kind of dispute is this, technically?",
+   opts:["A civil dispute","A criminal offence","A constitutional matter","A labour dispute"], c:0, ex:"Disagreements over money, contracts, or property between private parties are civil matters, resolved under the Code of Civil Procedure."},
+  {cat:'civil', q:"What's the main law governing contracts in India, the one behind every 'terms and conditions' you never read?",
+   opts:["Indian Contract Act, 1872","Companies Act, 2013","IT Act, 2000","CrPC, 1973"], c:0, ex:"The Indian Contract Act, 1872 lays down the rules for valid, enforceable agreements."},
+  {cat:'civil', q:"A 'plaintiff' in a civil case is...",
+   opts:["The person who filed the case","The judge","The accused","The witness"], c:0, ex:"The plaintiff is the party who initiates a civil suit; the other side is the defendant."},
+  {cat:'civil', q:"What's the usual limitation period to file most civil suits in India, the deadline nobody remembers until it's too late?",
+   opts:["3 years, under the Limitation Act","30 days","10 years","No deadline at all"], c:0, ex:"The Limitation Act, 1963 sets a 3 year window for most civil suits, from when the cause of action arose."},
+
+  {cat:'property', q:"You're buying a flat and your lawyer insists on checking the 'title.' What's a clear title actually about?",
+   opts:["Proof the seller genuinely owns and can sell it","The flat's paint colour","The builder's Instagram reviews","The floor number"], c:0, ex:"A clear title confirms the seller has legitimate, unencumbered ownership, free of disputes or pending loans."},
+  {cat:'property', q:"What does RERA mainly protect homebuyers from?",
+   opts:["Delayed or fraudulent real estate projects","Traffic near the property","High electricity bills","Bad interior design"], c:0, ex:"The Real Estate (Regulation and Development) Act, 2016 (RERA) protects buyers from project delays and builder fraud."},
+  {cat:'property', q:"A 'mutation' of property records means...",
+   opts:["Updating ownership records after a sale or inheritance","Demolishing the property","Renting it out","Changing its colour scheme"], c:0, ex:"Mutation updates land revenue records to reflect the new owner's name, important for tax and future sales."},
+  {cat:'property', q:"Can a daughter legally claim an equal share in ancestral Hindu property today?",
+   opts:["Yes, since the 2005 Hindu Succession Act amendment","No, only sons can","Only if unmarried","Only with a court order every time"], c:0, ex:"The 2005 amendment to the Hindu Succession Act gave daughters equal coparcenary rights as sons."},
+
+  {cat:'cyber', q:"Someone morphs your photo and threatens to post it unless you pay up. Which law covers this?",
+   opts:["IT Act, 2000, sections on obscenity and extortion","Companies Act, 2013","Contract Act, 1872","Limitation Act, 1963"], c:0, ex:"The Information Technology Act, 2000 covers cybercrimes like obscene content, hacking, and online extortion."},
+  {cat:'cyber', q:"What does Section 66 of the IT Act broadly deal with?",
+   opts:["Computer related offences, like hacking","Company mergers","Marriage registration","Property tax"], c:0, ex:"Section 66 IT Act covers hacking and other computer related offences, with related sections for identity theft and cheating by impersonation."},
+  {cat:'cyber', q:"Is forwarding a fake WhatsApp message that causes panic potentially punishable?",
+   opts:["Yes, under IT Act and IPC/BNS provisions on rumours","No, forwarding is never anyone's responsibility","Only if you wrote it yourself","Only television news is regulated"], c:0, ex:"Spreading misinformation that causes public fear can attract liability under both the IT Act and criminal law provisions on rumours."},
+  {cat:'cyber', q:"What's the point of a 'Section 65B certificate' that lawyers keep mentioning for WhatsApp chat evidence?",
+   opts:["It certifies electronic evidence as authentic in court","It unlocks your phone for police","It's a data plan for lawyers","It deletes chat history legally"], c:0, ex:"Section 65B of the Evidence Act requires a certificate authenticating electronic records before courts can rely on them."},
+
+  {cat:'family', q:"Triple Talaq, instant divorce by saying 'talaq' three times, was declared unconstitutional by the Supreme Court in which year?",
+   opts:["2017","2005","1985","2019"], c:0, ex:"In Shayara Bano v. Union of India (2017), the Supreme Court struck down instant Triple Talaq."},
+  {cat:'family', q:"What's the main law governing Hindu marriage and divorce in India?",
+   opts:["Hindu Marriage Act, 1955","Special Marriage Act, 1954","Indian Contract Act, 1872","Companies Act, 2013"], c:0, ex:"The Hindu Marriage Act, 1955 governs marriage, divorce, and related matters for Hindus."},
+  {cat:'family', q:"Can two people of different religions legally marry without either converting?",
+   opts:["Yes, under the Special Marriage Act, 1954","No, one must always convert","Only abroad","Only with court permission every time"], c:0, ex:"The Special Marriage Act, 1954 allows interfaith and civil marriages without requiring conversion."},
+
+  {cat:'consumer', q:"Your online order arrives broken and the seller ghosts you. Where can you take this?",
+   opts:["Consumer forum, under the Consumer Protection Act","Only a criminal court","The Company's HR department","Nowhere, online orders aren't covered"], c:0, ex:"The Consumer Protection Act, 2019 lets buyers approach consumer commissions for defective goods or deficient services, including e-commerce."},
+  {cat:'consumer', q:"What does 'unfair trade practice' cover under consumer law?",
+   opts:["Misleading ads or false claims about a product","Only overpricing petrol","Only banking fraud","Only food safety"], c:0, ex:"Unfair trade practices include false representations, misleading advertisements, and deceptive claims about goods or services."},
+  {cat:'consumer', q:"Under the Consumer Protection Act, 2019, who can now be held responsible for a misleading celebrity endorsement?",
+   opts:["The endorser can face penalties too","Only the company, never the endorser","Only the advertising agency","No one, endorsements are opinions"], c:0, ex:"The 2019 Act introduced penalties for endorsers of misleading advertisements, not just the companies behind them."},
+
+  {cat:'labour', q:"Your friend's boss won't pay overtime and says 'that's not a real law.' Is there one?",
+   opts:["Yes, regulated under labour law and the newer Labour Codes","No, overtime is always optional for employers","Only for government jobs","Only for factory workers"], c:0, ex:"Overtime pay is regulated, historically under laws like the Factories Act, now consolidated under India's new Labour Codes."},
+  {cat:'labour', q:"What's the point of the Employees' Provident Fund (EPF)?",
+   opts:["A retirement savings scheme funded by employer and employee","A one time joining bonus","A tax on employers only","A health insurance replacement"], c:0, ex:"EPF is a mandatory retirement savings scheme with contributions from both employer and employee."},
+  {cat:'labour', q:"Can a private company legally fire someone with zero notice and zero reason?",
+   opts:["No, termination generally requires notice or cause under labour law","Yes, always, instantly","Only if they're under 25","Only on weekends"], c:0, ex:"Employment termination is generally governed by contract terms and labour law protections requiring notice or valid cause."},
+
+  {cat:'corporate', q:"What's the main law governing how companies are formed and run in India?",
+   opts:["Companies Act, 2013","Indian Contract Act, 1872","IT Act, 2000","Consumer Protection Act, 2019"], c:0, ex:"The Companies Act, 2013 governs incorporation, governance, and regulation of companies in India."},
+  {cat:'corporate', q:"What does 'limited liability' in a Private Limited Company actually protect?",
+   opts:["Shareholders' personal assets from company debts","The company's office furniture","The CEO's salary","Nothing, it's just a title"], c:0, ex:"Limited liability means shareholders only risk their investment in the company, not their personal assets, if the company runs into debt."},
+  {cat:'corporate', q:"What's a 'Memorandum of Association' for a company?",
+   opts:["A foundational document defining the company's scope and objectives","An employee's appointment letter","A tax return","A loan agreement"], c:0, ex:"The Memorandum of Association (MOA) defines a company's objectives, scope, and relationship with shareholders."},
+];
+
+const TF_ITEMS = [
+  {cat:'constitutional', s:"Article 370 gave special status to Jammu & Kashmir before being abrogated in 2019.", t:true, ex:"True, abrogated via Presidential Order in August 2019."},
+  {cat:'constitutional', s:"The Preamble was part of the original Constitution and has never been amended.", t:false, ex:"False, amended once, by the 42nd Amendment (1976), adding 'Socialist', 'Secular', 'Integrity'."},
+  {cat:'constitutional', s:"India is often described as federal in form but unitary in spirit.", t:true, ex:"True, a strong Centre with states holding their own defined powers."},
+  {cat:'constitutional', s:"The Chief Justice of India can single-handedly amend the Constitution.", t:false, ex:"False, only Parliament can, via Article 368, with specific majorities."},
+  {cat:'constitutional', s:"There's an Article that lets the President dissolve a state government and impose President's Rule.", t:true, ex:"True, Article 356, historically, let's say 'frequently used.'"},
+  {cat:'constitutional', s:"Fundamental Rights can never be suspended, not even during a national emergency.", t:false, ex:"False, most Fundamental Rights (except Articles 20 & 21) can be suspended under Article 352."},
+  {cat:'constitutional', s:"Article 1 literally opens with 'India, that is Bharat, shall be a Union of States.'", t:true, ex:"True, both names are constitutionally official, right from Article 1."},
+
+  {cat:'criminal', s:"Under the new Bharatiya Nyaya Sanhita, murder is still commonly called 'Section 302.'", t:false, ex:"False, murder moved to Section 103 under the BNS, replacing the old IPC 302."},
+  {cat:'criminal', s:"Defamation can be pursued as both a civil and a criminal matter in India.", t:true, ex:"True, you can sue civilly for damages or file a criminal complaint under defamation provisions."},
+  {cat:'criminal', s:"'Culpable homicide' and 'murder' mean exactly the same thing legally.", t:false, ex:"False, murder is a specific, more severe category of culpable homicide with distinct legal elements."},
+
+  {cat:'crpc', s:"You can be arrested without a warrant for literally any crime in India.", t:false, ex:"False, only cognizable offences allow warrantless arrest."},
+  {cat:'crpc', s:"Bail is a right for every accused person in every kind of case.", t:false, ex:"False, bail is discretionary and stricter for serious or non-bailable offences."},
+
+  {cat:'civil', s:"A verbal agreement can be legally enforceable in India, not just written contracts.", t:true, ex:"True, oral contracts are valid if they meet the essentials of a contract, though harder to prove."},
+  {cat:'civil', s:"Civil cases require proof 'beyond reasonable doubt,' just like criminal cases.", t:false, ex:"False, civil cases use the lower standard of 'preponderance of probability.'"},
+  {cat:'civil', s:"You can recover money owed to you through a civil suit even without a written IOU.", t:true, ex:"True, though written proof makes it far easier; other evidence can still support your claim."},
+
+  {cat:'property', s:"The Right to Property is currently a Fundamental Right.", t:false, ex:"False, downgraded to a legal right (Article 300A) by the 44th Amendment in 1978."},
+  {cat:'property', s:"A daughter can now claim equal coparcenary rights in ancestral Hindu property.", t:true, ex:"True, since the 2005 amendment to the Hindu Succession Act."},
+  {cat:'property', s:"RERA registration is optional for most real estate projects.", t:false, ex:"False, RERA registration is mandatory for most projects above a defined size."},
+
+  {cat:'cyber', s:"Hacking someone's email account is only a civil matter, not criminal.", t:false, ex:"False, unauthorized access is a criminal offence under the IT Act."},
+  {cat:'cyber', s:"Online defamation and offline defamation are treated as completely unrelated legal concepts in India.", t:false, ex:"False, the same defamation principles apply online, with the IT Act adding extra provisions for electronic content."},
+  {cat:'cyber', s:"India has a dedicated law specifically called the Information Technology Act, 2000.", t:true, ex:"True, it's the primary law governing cybercrime and electronic transactions in India."},
+
+  {cat:'family', s:"Triple Talaq was declared unconstitutional by the Supreme Court in 2017.", t:true, ex:"True, Shayara Bano v. Union of India, 2017."},
+  {cat:'family', s:"Interfaith couples in India must always have one partner convert before marrying legally.", t:false, ex:"False, the Special Marriage Act, 1954 allows marriage without conversion."},
+
+  {cat:'consumer', s:"E-commerce purchases are excluded from India's Consumer Protection Act.", t:false, ex:"False, the Consumer Protection Act, 2019 explicitly covers e-commerce transactions."},
+  {cat:'consumer', s:"A misleading celebrity endorsement can now attract penalties for the celebrity, not just the brand.", t:true, ex:"True, the 2019 Act introduced accountability for endorsers of misleading ads."},
+
+  {cat:'labour', s:"Employers in India can legally skip provident fund contributions if the employee agrees in writing.", t:false, ex:"False, EPF contributions are a statutory requirement, not something either side can opt out of by agreement."},
+  {cat:'labour', s:"India recently consolidated dozens of old labour laws into a smaller set of Labour Codes.", t:true, ex:"True, several central labour laws were merged into four Labour Codes in recent reforms."},
+
+  {cat:'corporate', s:"A Private Limited Company's shareholders can lose their personal homes to pay off company debt.", t:false, ex:"False, limited liability protects personal assets beyond the shareholder's investment in the company."},
+  {cat:'corporate', s:"Every company in India must have at least one director who is an Indian resident.", t:true, ex:"True, the Companies Act, 2013 requires at least one resident director on every board."},
+];
+
+
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+
+const menu = document.getElementById('menu');
+const game = document.getElementById('game');
+const results = document.getElementById('results');
+const scoreVal = document.getElementById('scoreVal');
+const streakPill = document.getElementById('streakPill');
+const timerBar = document.getElementById('timerBar');
+const timerFill = document.getElementById('timerFill');
+const mcqArea = document.getElementById('mcqArea');
+const swipeArea = document.getElementById('swipeArea');
+const judgeRow = document.getElementById('judgeRow');
+const judgeBubble = document.getElementById('judgeBubble');
+const qtag = document.getElementById('qtag');
+const qtext = document.getElementById('qtext');
+const optsWrap = document.getElementById('optsWrap');
+const explainBox = document.getElementById('explainBox');
+const swipeWrap = document.getElementById('swipeWrap');
+const swipeExplain = document.getElementById('swipeExplain');
+
+const topicPicker = document.getElementById('topicPicker');
+let mode = null, pendingMode = null, selectedTopic = ['all'], pool = [], idx = 0, score = 0, streak = 0, timerInt = null, locked = false;
+
+function showScreen(el){
+  [menu, topicPicker, game, results].forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+const TOPIC_MODES = ['scenario', 'judge'];
+
+document.getElementById('topicList').innerHTML = CATS.map(c=>
+  `<div class="mode-card" data-topic="${c.key}"><div class="ic">${c.icon}</div><div><div class="mt">${c.label}</div><div class="md" id="mastery-${c.key}"></div></div></div>`
+).join('');
+
+document.querySelectorAll('#menu .mode-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const m = card.dataset.mode;
+    if(TOPIC_MODES.includes(m)){
+      pendingMode = m;
+      selectedTopicSet = new Set(['all']);
+      refreshTopicCards();
+      refreshTopicMastery();
+      showScreen(topicPicker);
+    } else {
+      startMode(m, ['all']);
+    }
+  });
+});
+
+let selectedTopicSet = new Set(['all']);
+
+function refreshTopicCards(){
+  document.querySelectorAll('#topicPicker .mode-card').forEach(card=>{
+    card.classList.toggle('selected', selectedTopicSet.has(card.dataset.topic));
+  });
+}
+
+document.querySelectorAll('#topicPicker .mode-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    const t = card.dataset.topic;
+    if(t === 'all'){
+      selectedTopicSet = new Set(['all']);
+    } else {
+      selectedTopicSet.delete('all');
+      if(selectedTopicSet.has(t)) selectedTopicSet.delete(t); else selectedTopicSet.add(t);
+      if(selectedTopicSet.size === 0) selectedTopicSet.add('all');
+    }
+    refreshTopicCards();
+  });
+});
+
+document.getElementById('topicBackBtn').addEventListener('click', ()=>{ refreshMenuStats(); showScreen(menu); });
+document.getElementById('topicStartBtn').addEventListener('click', ()=> startMode(pendingMode, [...selectedTopicSet]));
+
+document.getElementById('replayBtn').addEventListener('click', ()=> startMode(mode, selectedTopic));
+document.getElementById('menuBtn').addEventListener('click', ()=>{ document.getElementById('stage').className = ''; refreshMenuStats(); showScreen(menu); });
+
+let audioCtx = null;
+function ac(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playGavel(){
+  const c = ac(); const t = c.currentTime;
+  const osc = c.createOscillator(); const gain = c.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(90, t);
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t+0.18);
+  osc.connect(gain); gain.connect(c.destination);
+  osc.start(t); osc.stop(t+0.2);
+}
+function playChime(freq){
+  const c = ac(); const t = c.currentTime;
+  const osc = c.createOscillator(); const gain = c.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(0.001, t);
+  gain.gain.linearRampToValueAtTime(0.14, t+0.04);
+  gain.gain.exponentialRampToValueAtTime(0.001, t+0.4);
+  osc.connect(gain); gain.connect(c.destination);
+  osc.start(t); osc.stop(t+0.45);
+}
+function showStamp(text, kind){
+  const el = document.getElementById('stamp');
+  el.className = 'stamp ' + kind;
+  el.textContent = text;
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(()=>{ el.classList.remove('show'); }, 900);
+}
+
+// ---- persistence & progression ----
+const STORE_KEY = 'kkk_stats_v1';
+function loadStats(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    daily:{lastDate:null, streak:0},
+    modes:{ rapid:{best:0,bestStreak:0,rounds:0}, scenario:{best:0,bestStreak:0,rounds:0}, swipe:{best:0,bestStreak:0,rounds:0}, judge:{best:0,bestStreak:0,rounds:0} },
+    mastery:{},
+    seen:{mcq:[], tf:[]},
+    achievements:[],
+    totalRounds:0
+  };
+}
+function saveStats(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(stats)); }catch(e){} }
+let stats = loadStats();
+let roundCorrect = 0, roundTotal = 0, roundBestStreak = 0;
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function bumpDailyStreak(){
+  const today = todayStr();
+  if(stats.daily.lastDate === today) return;
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yesterday = y.toISOString().slice(0,10);
+  stats.daily.streak = (stats.daily.lastDate === yesterday) ? stats.daily.streak + 1 : 1;
+  stats.daily.lastDate = today;
+}
+function ensureMastery(cat){ if(!stats.mastery[cat]) stats.mastery[cat] = {seen:0, correct:0}; return stats.mastery[cat]; }
+function recordAnswer(cat, correct){
+  const m = ensureMastery(cat);
+  m.seen++; if(correct) m.correct++;
+  roundTotal++; if(correct) roundCorrect++;
+  roundBestStreak = Math.max(roundBestStreak, streak);
+}
+
+function buildRoundPool(fullArr, filteredArr, seenIds, capacity){
+  const cap = Math.min(capacity, filteredArr.length);
+  const withId = filteredArr.map(it => ({it, id: fullArr.indexOf(it)}));
+  const unseen = withId.filter(x=>!seenIds.includes(x.id));
+  const seenPool = withId.filter(x=>seenIds.includes(x.id));
+  const chosen = (unseen.length >= cap)
+    ? shuffle(unseen).slice(0, cap)
+    : shuffle([...unseen, ...shuffle(seenPool)]).slice(0, cap);
+  chosen.forEach(x=>{ if(!seenIds.includes(x.id)) seenIds.push(x.id); });
+  return chosen.map(x=>x.it);
+}
+
+const ACHIEVEMENTS = [
+  {key:'explorer', label:'Explorer', icon:'🗺️', test:()=> CATS.every(c => stats.mastery[c.key] && stats.mastery[c.key].seen > 0)},
+  {key:'onfire', label:'On Fire', icon:'🔥', test:()=> Object.values(stats.modes).some(m=>m.bestStreak >= 5)},
+  {key:'perfectionist', label:'Perfectionist', icon:'💯', test:()=> roundTotal >= 5 && roundCorrect === roundTotal},
+  {key:'senioradvocate', label:'Senior Advocate', icon:'🎓', test:()=> ['rapid','scenario','judge'].includes(mode) && score >= 90},
+  {key:'weekstrong', label:'Week Strong', icon:'📅', test:()=> stats.daily.streak >= 7},
+  {key:'centuryclub', label:'Century Club', icon:'🏛️', test:()=> stats.totalRounds >= 10},
+];
+
+function checkAchievements(){
+  const newly = [];
+  ACHIEVEMENTS.forEach(a=>{
+    if(!stats.achievements.includes(a.key) && a.test()){
+      stats.achievements.push(a.key);
+      newly.push(a);
+    }
+  });
+  saveStats();
+  if(newly.length) showAchievementToast(newly);
+}
+
+function showAchievementToast(list){
+  const el = document.getElementById('achToast');
+  let i = 0;
+  function next(){
+    if(i >= list.length){ el.classList.remove('show'); return; }
+    el.textContent = list[i].icon + ' Unlocked: ' + list[i].label;
+    el.classList.add('show');
+    setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>{ i++; next(); }, 300); }, 2200);
+  }
+  next();
+}
+
+function refreshMenuStats(){
+  document.getElementById('statsBar').textContent =
+    '🔥 ' + stats.daily.streak + ' day streak    🏆 ' + stats.achievements.length + '/' + ACHIEVEMENTS.length + ' badges';
+  const row = document.getElementById('achRow');
+  row.innerHTML = ACHIEVEMENTS.map(a=>{
+    const unlocked = stats.achievements.includes(a.key);
+    return '<span class="badge' + (unlocked?'':' locked') + '" title="'+a.label+'">'+a.icon+'</span>';
+  }).join('');
+}
+
+function refreshTopicMastery(){
+  CATS.forEach(c=>{
+    const m = stats.mastery[c.key];
+    const el = document.getElementById('mastery-' + c.key);
+    if(!el) return;
+    el.textContent = (m && m.seen > 0) ? Math.round(100*m.correct/m.seen) + '% mastered' : 'Not explored yet';
+  });
+}
+
+function startMode(m, topics){
+  mode = m; selectedTopic = topics || ['all'];
+  score = 0; streak = 0; idx = 0; locked = false;
+  roundCorrect = 0; roundTotal = 0; roundBestStreak = 0;
+  scoreVal.textContent = '0'; streakPill.textContent = 'STREAK 0';
+  document.getElementById('stage').className = 'theme-' + m;
+  showScreen(game);
+  if(m === 'swipe'){
+    mcqArea.style.display = 'none'; swipeArea.style.display = 'flex';
+    timerBar.style.display = 'none'; judgeRow.style.display = 'none';
+    pool = buildRoundPool(TF_ITEMS, TF_ITEMS, stats.seen.tf, 10);
+    saveStats();
+    renderSwipe();
+  } else {
+    mcqArea.style.display = 'flex'; swipeArea.style.display = 'none';
+    judgeRow.style.display = (m === 'judge') ? 'flex' : 'none';
+    timerBar.style.display = (m === 'rapid') ? 'block' : 'none';
+    const source = (!selectedTopic.includes('all')) ? MCQ_ITEMS.filter(i=>selectedTopic.includes(i.cat)) : MCQ_ITEMS;
+    pool = buildRoundPool(MCQ_ITEMS, source, stats.seen.mcq, 10);
+    saveStats();
+    renderMCQ();
+  }
+}
+
+function endRound(){
+  clearInterval(timerInt);
+  showScreen(results);
+  document.getElementById('finalScoreVal').textContent = score;
+  let title, msg;
+  if(score >= 90){ title = "Senior Advocate"; msg = "You basically wrote the Constitution at this point."; }
+  else if(score >= 50){ title = "Sharp Litigator"; msg = "Confident, mostly correct, occasionally objected to."; }
+  else if(score >= 20){ title = "Law Intern"; msg = "You've got the vibe, not quite the citations yet."; }
+  else { title = "Held in Contempt"; msg = "The judge is not impressed. Try again, counsel."; }
+  document.getElementById('verdictTitle').textContent = title;
+  document.getElementById('finalMsg').textContent = msg;
+
+  bumpDailyStreak();
+  const ms = stats.modes[mode];
+  ms.rounds++; stats.totalRounds++;
+  if(score > ms.best) ms.best = score;
+  if(roundBestStreak > ms.bestStreak) ms.bestStreak = roundBestStreak;
+  saveStats();
+  checkAchievements();
+
+  const bestLine = document.getElementById('roundBestLine');
+  if(bestLine) bestLine.textContent = 'Personal best for this mode: ' + ms.best;
+}
+
+// ---- MCQ engine (rapid / scenario / judge) ----
+function renderMCQ(){
+  if(idx >= pool.length){ endRound(); return; }
+  locked = false;
+  explainBox.style.display = 'none';
+  const item = pool[idx];
+  const baseTag = mode === 'rapid' ? 'RAPID FIRE' : mode === 'judge' ? "THE COURT ASKS" : "WHAT'S THE LAW?";
+  let topicLabel = null;
+  if(!selectedTopic.includes('all')){
+    const labels = selectedTopic.map(t=>(CATS.find(c=>c.key===t)||{}).label).filter(Boolean);
+    topicLabel = labels.length <= 2 ? labels.join(' + ') : labels.length + ' topics';
+  }
+  qtag.textContent = topicLabel ? baseTag + ' · ' + topicLabel : baseTag;
+  qtext.textContent = item.q;
+  optsWrap.innerHTML = '';
+  const order = shuffle(item.opts.map((o,i)=>({o,correct:i===item.c})));
+  order.forEach(entry=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt'; btn.textContent = entry.o;
+    btn.onclick = ()=> handleMCQAnswer(btn, entry.correct, item.ex, item.cat);
+    optsWrap.appendChild(btn);
+  });
+  if(mode === 'judge') judgeBubble.textContent = "Order! Answer carefully...";
+  if(mode === 'rapid') startTimer(item.ex, item.cat);
+}
+
+function startTimer(ex, cat){
+  let t = 100;
+  timerFill.style.width = '100%';
+  timerFill.style.transition = 'none';
+  requestAnimationFrame(()=>{
+    timerFill.style.transition = 'width 8s linear';
+    timerFill.style.width = '0%';
+  });
+  clearTimeout(timerInt);
+  timerInt = setTimeout(()=>{ if(!locked) handleMCQAnswer(null, false, ex, cat); }, 8000);
+}
+
+function handleMCQAnswer(btn, correct, ex, cat){
+  if(locked) return;
+  locked = true;
+  clearTimeout(timerInt);
+  [...optsWrap.children].forEach(o=>o.style.pointerEvents = 'none');
+  if(btn) btn.classList.add(correct ? 'correct' : 'wrong');
+  if(correct){
+    streak++; score += 10 + (streak-1)*2;
+    if(mode === 'judge'){
+      judgeBubble.textContent = "Order! Correct, case dismissed.";
+      playGavel();
+      showStamp('SUSTAINED', 'sustained');
+    }
+    if(mode === 'rapid') playChime(660);
+  } else {
+    streak = 0;
+    if(mode === 'judge'){
+      judgeBubble.textContent = "OBJECTION! That's not it, counsel.";
+      playGavel();
+      showStamp('OVERRULED', 'overruled');
+    }
+    if(mode === 'rapid') playChime(220);
+  }
+  recordAnswer(cat, correct);
+  scoreVal.textContent = score;
+  streakPill.innerHTML = 'STREAK ' + streak + (mode === 'rapid' && streak >= 3 ? ' <span class="combo-flame">🔥</span>' : '');
+  explainBox.style.display = 'block';
+  explainBox.textContent = ex;
+  setTimeout(()=>{ idx++; renderMCQ(); }, 1400);
+}
+
+// ---- Swipe engine ----
+function renderSwipe(){
+  if(idx >= pool.length){ endRound(); return; }
+  locked = false;
+  swipeExplain.textContent = '';
+  swipeWrap.innerHTML = '';
+  const item = pool[idx];
+  const card = document.createElement('div');
+  card.className = 'swipe-card';
+  card.textContent = item.s;
+  swipeWrap.appendChild(card);
+
+  let startX = 0, curX = 0, dragging = false;
+  function onDown(x){ dragging = true; startX = x; }
+  function onMove(x){
+    if(!dragging) return;
+    curX = x - startX;
+    card.style.transform = `translateX(${curX}px) rotate(${curX/18}deg)`;
+  }
+  function onUp(){
+    if(!dragging) return;
+    dragging = false;
+    if(Math.abs(curX) > 70){
+      resolveSwipe(curX > 0, item);
+    } else {
+      card.style.transition = 'transform .25s ease';
+      card.style.transform = 'translateX(0) rotate(0)';
+      setTimeout(()=>card.style.transition='',260);
+    }
+    curX = 0;
+  }
+  card.addEventListener('pointerdown', e=>onDown(e.clientX));
+  card.addEventListener('pointermove', e=>onMove(e.clientX));
+  card.addEventListener('pointerup', onUp);
+  card.addEventListener('pointerleave', onUp);
+}
+
+function resolveSwipe(guessTrue, item){
+  if(locked) return;
+  locked = true;
+  const correct = guessTrue === item.t;
+  if(correct){ streak++; score += 10 + (streak-1)*2; }
+  else { streak = 0; }
+  recordAnswer(item.cat, correct);
+  scoreVal.textContent = score;
+  streakPill.textContent = 'STREAK ' + streak;
+  swipeExplain.textContent = (correct ? '✅ ' : '❌ ') + item.ex;
+  setTimeout(()=>{ idx++; renderSwipe(); }, 1300);
+}
+
+document.getElementById('exitBtn').addEventListener('click', ()=>{
+  clearTimeout(timerInt);
+  locked = true;
+  document.getElementById('stage').className = '';
+  refreshMenuStats();
+  showScreen(menu);
+});
+
+refreshMenuStats();
+</script>
+</body>
+</html>

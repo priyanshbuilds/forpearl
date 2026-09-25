@@ -299,6 +299,7 @@
 
   <div class="hud" id="hud" style="display:none;">
     <div class="pill">SCORE <span id="scoreVal">0</span></div>
+    <div class="pill" id="exitBtn" style="cursor:pointer;">✕</div>
     <div class="pill"><span id="timeVal">40</span>s</div>
   </div>
 
@@ -507,11 +508,11 @@ function runTierEffect(effect, fxLayer, tierIndex){
 
 const TIERS = [
   {key:'crash', name:'System Crash', icon:'🖤', min:-Infinity, max:-1, effect:'crash',
-    msg:"Rough round. More ghosts than roses today — but he's still catching feelings for you regardless."},
+    msg:"Rough round. More ghosts than roses today, but he's still catching feelings for you regardless."},
   {key:'t1', name:'First Spark', icon:'🌱', min:0, max:25, range:'0–25', effect:'hope',
-    msg:"A small start. There's still hope — and he's not going anywhere."},
+    msg:"A small start. There's still hope, and he's not going anywhere."},
   {key:'t2', name:'Warming Up', icon:'🌼', min:26, max:50, range:'26–50', effect:'hope',
-    msg:"Getting there. He was really hoping for a bit better for you — try again?"},
+    msg:"Getting there. He was really hoping for a bit better for you, try again?"},
   {key:'t3', name:'Steady Hands', icon:'🌹', min:51, max:75, range:'51–75', effect:'mid',
     msg:"Steady round. A few close calls, mostly nailed it."},
   {key:'t4', name:'Sweet Streak', icon:'💌', min:76, max:100, range:'76–100', effect:'mid',
@@ -523,11 +524,11 @@ const TIERS = [
   {key:'t7', name:'Power Couple', icon:'💍', min:151, max:175, range:'151–175', effect:'high',
     msg:"Power couple energy. You clear every level he throws at you."},
   {key:'t8', name:'Perfect Sync', icon:'👑', min:176, max:200, range:'176–200', effect:'top',
-    msg:"Perfectly in sync. Top tier — that's rare air up there."},
+    msg:"Perfectly in sync. Top tier, that's rare air up there."},
   {key:'t9', name:'Arcade Royalty', icon:'🏆', min:201, max:225, range:'201–225', effect:'top',
     msg:"Arcade royalty. Best player in this whole cabinet, no contest."},
   {key:'t10', name:'Legendary Love', icon:'💎', min:226, max:Infinity, range:'226+', effect:'top',
-    msg:"Legendary. Off the charts — just like he thinks you are."},
+    msg:"Legendary. Off the charts, just like he thinks you are."},
 ];
 
 function endGame(){
@@ -634,6 +635,17 @@ function startGame(){
 }
 
 document.getElementById('startBtn').addEventListener('click', startGame);
+
+document.getElementById('exitBtn').addEventListener('click', ()=>{
+  running = false;
+  clearInterval(countdownInterval);
+  items.forEach(it=>it.el.remove());
+  items = [];
+  hud.style.display = 'none';
+  playfield.style.display = 'none';
+  end.style.display = 'none';
+  intro.style.display = 'flex';
+});
 document.getElementById('retryBtn').addEventListener('click', startGame);
 </script>
 </body>
